@@ -1,68 +1,71 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour {
+public class PlayerMovement : MonoBehaviour
+{
+    private const string AxisHorizontal = "Horizontal";
+    private static readonly int Speed = Animator.StringToHash("Speed");
+    private static readonly int IsJumping = Animator.StringToHash("IsJumping");
 
-	public CharacterController2D controller;
-	public Animator animator;
+    [SerializeField] private CharacterController2D _controller;
+    [SerializeField] private Animator _animator;
+    [SerializeField] private float _runSpeed = 40f;
 
-	public float runSpeed = 40f;
+    private float _horizontalMove = 0f;
+    private bool _jump = false;
+    private bool _dash = false;
 
-	float horizontalMove = 0f;
-	bool jump = false;
-	bool dash = false;
+    //bool dashAxis = false;
 
-	//bool dashAxis = false;
-	
-	// Update is called once per frame
-	void Update () {
+    // Update is called once per frame
 
-		horizontalMove = Input.GetAxisRaw("Horizontal") * runSpeed;
+    private void OnEnable()
+    {
+        _controller.OnFallEvent += OnFall;
+        _controller.OnLandEvent += OnLanding;
+    }
+    private void OnDisable()
+    {
+        _controller.OnFallEvent -= OnFall;
+        _controller.OnLandEvent -= OnLanding;
+    }
 
-		animator.SetFloat("Speed", Mathf.Abs(horizontalMove));
+    
+    
+    private void Update()
+    {
+        _horizontalMove = Input.GetAxisRaw(AxisHorizontal) * _runSpeed;
 
-		if (Input.GetKeyDown(KeyCode.Z))
-		{
-			jump = true;
-		}
+        _animator.SetFloat(Speed, Mathf.Abs(_horizontalMove));
 
-		if (Input.GetKeyDown(KeyCode.C))
-		{
-			dash = true;
-		}
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+           // _controller.Jump();
+            _jump = true;
+        }
 
-		/*if (Input.GetAxisRaw("Dash") == 1 || Input.GetAxisRaw("Dash") == -1) //RT in Unity 2017 = -1, RT in Unity 2019 = 1
-		{
-			if (dashAxis == false)
-			{
-				dashAxis = true;
-				dash = true;
-			}
-		}
-		else
-		{
-			dashAxis = false;
-		}
-		*/
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            //_controller.Dash();
+            _dash = true;
+        }
+    }
 
-	}
+    private void FixedUpdate()
+    {
+        // Move our character
+        _controller.Move(_horizontalMove * Time.fixedDeltaTime, _jump, _dash);
+        _jump = false;
+        _dash = false;
+    }
 
-	public void OnFall()
-	{
-		animator.SetBool("IsJumping", true);
-	}
+    private void OnLanding()
+    {
+        _animator.SetBool(IsJumping, true);
+    }
 
-	public void OnLanding()
-	{
-		animator.SetBool("IsJumping", false);
-	}
-
-	void FixedUpdate ()
-	{
-		// Move our character
-		controller.Move(horizontalMove * Time.fixedDeltaTime, jump, dash);
-		jump = false;
-		dash = false;
-	}
+    private void OnFall()
+    {
+        _animator.SetBool(IsJumping, true);
+    }
 }
